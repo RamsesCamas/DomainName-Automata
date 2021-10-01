@@ -1,0 +1,22 @@
+{% extends 'bootstrap/base.html'%}
+{% block title %}
+Verificador de dominios
+{% endblock %}
+
+{% block navbar %}
+<nav class="nav" style="background-color: black; color: white;">
+    <h1>Verificador de dominios con NFA</h1>
+  </nav>
+{% endblock %}
+
+{% block content %}
+<form action="/" method="post" class="col-12" style="text-align: center;">
+    <div class="col-10" style="margin-top: 30px;">
+        <label for="exampleFormControlInput1" class="form-label" style="font-size: 30px; margin-left: 200px;">Ingresar su nombre de dominio</label>
+        <input type="text" class="form-control" id="exampleFormControlInput1" placeholder="www.example.com" style="margin-bottom: 30px; margin-left: 100px;" name="domain_name">
+      </div>
+      <div class="d-grip gap-2">
+        <button type="submit" class="btn btn-primary btn-lg col-9" style="font-size: 23px;"><b>Verificar nombre de dominio</b></button>
+      </div>
+    </form>
+{% endblock content %}

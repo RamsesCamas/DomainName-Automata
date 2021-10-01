@@ -1,88 +1,32 @@
-#import requests
-#from requests.exceptions import ConnectionError
-import ast
-from nfa import NFA
-from dfa import DFA
+from flask import Flask, request, redirect, url_for
+from flask import render_template
+from flask_bootstrap import Bootstrap
+from auto_process import start_automata, get_domain
 
-URL = 'http://sabertech.com/'
+app = Flask(__name__,template_folder='templates')
+bootstrap = Bootstrap(app)
 
-def read_automata(filename):
-    Auto_model = {}
-    with open(filename,mode='r',encoding='utf-8') as f:
-        for line in f:
-            k, v = line.strip().split('=')
-            Auto_model[k.strip()] = v.strip()
-    Auto_model['S']  = Auto_model['S'][1:-1].replace(',','')
-    s = set(Auto_model['S'])
+@app.route('/',methods=['GET','POST'])
+def index():
+    if request.method == 'POST':
+        domain_name = request.form['domain_name'].replace(' ','')
+        is_valid = start_automata(domain_name)
+        result_url ='.result_domain'
+        if is_valid:
+            is_aviable = get_domain(domain_name)
+            if is_aviable:
+                return redirect(url_for(result_url,response='El nombre de dominio está disponible'))
+            else:
+                return redirect(url_for(result_url,response='El nombre de dominio no está disponible'))
+        else:
+            return redirect(url_for(result_url,response='El nombre NO es válido'))
+        
+    return render_template('index.html')
 
-    Auto_model['Q'] = Auto_model['Q'].replace('{','')
-    Auto_model['Q'] = Auto_model['Q'].replace('}','')
-    state_list = list(Auto_model['Q'].split(','))
-    q = set(state_list)
-
-
-    d = Auto_model['D']
-    d = d.replace(' ','')
-    d = d.replace('{(','(')
-    d = d.replace(')}',')') 
-    d = d.replace("(","('")
-    d = d.replace(",","','") 
-    d = d.replace(")','",",") 
-    check_nfa = ',{'
-    if check_nfa in Auto_model['D']:
-        type_automata = 'NFA' 
-        d = d.replace(",'{",",{") 
-        d = d.replace("{","{'") 
-        d = d.replace("}","'}") 
-        d = d.replace("},","}),")     
-    else:
-        type_automata = 'DFA'
-        d = d.replace(",(","),(") 
-        d = d.replace(")","')") 
-    delta =list(ast.literal_eval(d))
-    states = {}
-    for state in delta:
-        states[(state[0],state[1])] = state[2]
-
-    Auto_model['F'] = Auto_model['F'].replace('{','')
-    Auto_model['F'] = Auto_model['F'].replace('}','')
-    final_state_list = list(Auto_model['F'].split(','))
-
-    final = set(final_state_list)
-    Auto_model = {
-        'S': s,
-        'Q': q,
-        'D': states,
-        'q0':Auto_model['q0'],
-        'F': final
-    }
-    return Auto_model,type_automata
-
-def run_automata(automata,automata_type,string):
-    if automata_type == 'NFA':
-        my_nfa = NFA()
-        res = my_nfa.nfa_simulation(string,automata)
-    elif automata_type == 'DFA':
-        my_dfa = DFA()
-        res = my_dfa.accepts_dfa(string,automata)
-    if res:
-        response = 'La cadena es válida'
-    else:
-        response = 'La cadena NO es válida'
-    return response
-
-def get_domain():
-    try:
-        response = requests.get(URL)
-        if response.status_code == 200:
-            print('El nombre de dominio no está disponible')
-    except ConnectionError:
-        print('El nombre de dominio está disponible')
-
-def start_automata(string):
-    new_Automata,auto_type = read_automata('nfa_dominios.txt')
-    result = run_automata(new_Automata,auto_type,string)
-    return result
+@app.route('/result')
+def result_domain():
+    result = request.args['response']
+    return render_template('response.html',response=result)
 
 if __name__ == '__main__':
-    print(start_automata('www.platzi.com'))
+    app.run(debug=True,port=9000)
