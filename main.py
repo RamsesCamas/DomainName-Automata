@@ -1,7 +1,75 @@
 #import requests
 #from requests.exceptions import ConnectionError
+import ast
+from nfa import NFA
+from dfa import DFA
 
 URL = 'http://sabertech.com/'
+
+def read_automata(filename):
+    Auto_model = {}
+    with open(filename,mode='r',encoding='utf-8') as f:
+        for line in f:
+            k, v = line.strip().split('=')
+            Auto_model[k.strip()] = v.strip()
+    Auto_model['S']  = Auto_model['S'][1:-1].replace(',','')
+    s = set(Auto_model['S'])
+
+    Auto_model['Q'] = Auto_model['Q'].replace('{','')
+    Auto_model['Q'] = Auto_model['Q'].replace('}','')
+    state_list = list(Auto_model['Q'].split(','))
+    q = set(state_list)
+
+
+    d = Auto_model['D']
+    d = d.replace(' ','')
+    d = d.replace('{(','(')
+    d = d.replace(')}',')') 
+    d = d.replace("(","('")
+    d = d.replace(",","','") 
+    d = d.replace(")','",",") 
+    check_nfa = ',{'
+    if check_nfa in Auto_model['D']:
+        type_automata = 'NFA' 
+        d = d.replace(",'{",",{") 
+        d = d.replace("{","{'") 
+        d = d.replace("}","'}") 
+        d = d.replace("},","}),")     
+    else:
+        type_automata = 'DFA'
+        d = d.replace(",(","),(") 
+        d = d.replace(")","')") 
+    delta =list(ast.literal_eval(d))
+    states = {}
+    for state in delta:
+        states[(state[0],state[1])] = state[2]
+
+    Auto_model['F'] = Auto_model['F'].replace('{','')
+    Auto_model['F'] = Auto_model['F'].replace('}','')
+    final_state_list = list(Auto_model['F'].split(','))
+
+    final = set(final_state_list)
+    Auto_model = {
+        'S': s,
+        'Q': q,
+        'D': states,
+        'q0':Auto_model['q0'],
+        'F': final
+    }
+    return Auto_model,type_automata
+
+def run_automata(automata,automata_type,string):
+    if automata_type == 'NFA':
+        my_nfa = NFA()
+        res = my_nfa.nfa_simulation(string,automata)
+    elif automata_type == 'DFA':
+        my_dfa = DFA()
+        res = my_dfa.accepts_dfa(string,automata)
+    if res:
+        response = 'La cadena es válida'
+    else:
+        response = 'La cadena NO es válida'
+    return response
 
 def get_domain():
     try:
@@ -10,14 +78,11 @@ def get_domain():
             print('El nombre de dominio no está disponible')
     except ConnectionError:
         print('El nombre de dominio está disponible')
+
+def start_automata(string):
+    new_Automata,auto_type = read_automata('nfa_dominios.txt')
+    result = run_automata(new_Automata,auto_type,string)
+    return result
+
 if __name__ == '__main__':
-    delta = []
-    my_char = ord('a')
-    while my_char <= ord('z'):
-        delta.append(('Q5',chr(my_char),'Q5'))
-        my_char +=1
-    print(delta)
-    delta_num = []
-    for i in range(10):
-        delta_num.append(('Q9',i,'Q10'))
-    print(delta_num)
+    print(start_automata('www.platzi.com'))
