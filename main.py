@@ -19,5 +19,5 @@ if __name__ == '__main__':
     print(delta)
     delta_num = []
     for i in range(10):
-        delta_num.append(('Q5',i,'Q5'))
+        delta_num.append(('Q9',i,'Q10'))
     print(delta_num)
